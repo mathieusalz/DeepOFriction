@@ -4,3 +4,4 @@ VENV2/
 *.pth
 __pycache__/
 physicsnemo-sym/
+*.csv

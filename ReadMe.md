@@ -1,6 +1,6 @@
 # Instructions for Nvidia-PhysicsNeMo (Provided by SCITAS)
 
-```console
+```bash
 module load gcc
 module load openmpi/5.0.3-cuda
 module load cuda
@@ -42,7 +42,7 @@ nvcc_args.append("-t=0") # Enable multi-threaded builds
 
 Save the file and run:
 
-```console
+```bash
 pip install --upgrade pip
 pip install --no-build-isolation .
 ```
@@ -51,6 +51,6 @@ pip install --no-build-isolation .
 # Instructions for running on Kuma
 
 First, you need to get onto a processing node
-```console
-Sinteract -a lsms-ddcf -p h100 -g gpu:1 -n 1 -t 00:10:00 -m 10G -q debug -c 1
+```bash
+Sinteract -a lsms-ddcf -p h100 -g gpu:1 -n 1 -t 00:30:00 -m 10G -q debug -c 1
 ```

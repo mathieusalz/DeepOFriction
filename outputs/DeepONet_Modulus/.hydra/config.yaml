@@ -83,7 +83,7 @@ arch:
   deeponet:
     arch_type: deeponet
     input_keys: ???
-    output_keys: u
+    output_keys: friction_coefficient
     detach_keys: ???
     scaling: null
     trunk_dim: null

@@ -6,3 +6,4 @@ __pycache__/
 physicsnemo-sym/
 *.csv
 *.0
+*.npz

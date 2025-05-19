@@ -36,6 +36,10 @@ from physicsnemo.sym.key import Key
 
 import pandas as pd
 
+from CVP_plotter import CustomValidatorPlotter
+from physicsnemo.sym.domain.inferencer import PointwiseInferencer
+from physicsnemo.sym.domain.validator import PointwiseValidator
+
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
 
@@ -48,8 +52,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     branch_net_input_keys = [Key(data.columns[i]) for i in range(cols)]
 
-    t_train = data["t"].to_numpy()
-    fric_train = data["friction_coefficient"].to_numpy()
+    t_train = data["t"].to_numpy().reshape(-1,1)
+    fric_train = data["friction_coefficient"].to_numpy().reshape(-1,1)
     
     # [init-model]
     # make list of nodes to unroll graph on
@@ -78,16 +82,27 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     invar = {"t": t_train}
     for i in range(cols):
-        invar[data.columns[i]] = data[data.columns[i]].to_numpy()
+        invar[data.columns[i]] = data[data.columns[i]].to_numpy().reshape(-1,1)
 
     # [constraint1]
     interior = DeepONetConstraint.from_numpy(
         nodes=nodes,
         invar= invar,
-        outvar={"friction_coefficient": fric_train},
+        outvar={"friction_coefficient": fric_train.reshape(-1,1)},
         batch_size=cfg.batch_size.train,
     )
     domain.add_constraint(interior, "Residual")
+
+    invar_numpy = {"t": t_train[:6*250]}
+    for i in range(cols):
+        invar_numpy[data.columns[i]] = data[data.columns[i]].to_numpy().reshape(-1,1)[:6*250]
+
+    validator = PointwiseValidator(nodes=nodes,
+                                    invar=invar_numpy,
+                                    true_outvar={"friction_coefficient": fric_train[:6*250]},
+                                    plotter=CustomValidatorPlotter())
+
+    domain.add_validator(validator, 'inferencer')
 
     # make solver
     slv = Solver(cfg, domain)

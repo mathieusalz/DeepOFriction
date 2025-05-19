@@ -1,4 +1,6 @@
 VENV/
+VENV2/
 *.out
 *.pth
 __pycache__/
+physicsnemo-sym/

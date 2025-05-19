@@ -31,6 +31,7 @@ from physicsnemo.sym.models.deeponet import DeepONetArch
 from physicsnemo.sym.domain.constraint.continuous import DeepONetConstraint
 from physicsnemo.sym.domain.validator.discrete import GridValidator
 from physicsnemo.sym.dataset.discrete import DictGridDataset
+from physicsnemo.sym.domain.constraint import SupervisedGridConstraint
 
 from physicsnemo.sym.key import Key
 
@@ -39,8 +40,10 @@ import pandas as pd
 from CVP_plotter import CustomValidatorPlotter
 from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.domain.validator import PointwiseValidator
+from physicsnemo.sym.utils.io.plotter import GridValidatorPlotter
 
-@physicsnemo.sym.main(config_path="conf", config_name="config_deep")
+
+@physicsnemo.sym.main(config_path="conf", config_name="config_fno")
 def run(cfg: PhysicsNeMoConfig) -> None:
 
     # [datasets]
@@ -50,59 +53,58 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     data = pd.read_csv(file_path)
     cols = len(data.columns) - 2
 
-    branch_net_input_keys = [Key(data.columns[i]) for i in range(cols)]
+    input_keys = [Key('velocity')]
 
-    t_train = data["t"].to_numpy().reshape(-1,1)
-    fric_train = data["friction_coefficient"].to_numpy().reshape(-1,1)
-    
+    velocity = data.to_numpy()[:, :cols].reshape(-1, 250, 1)  # shape (1000, 250)
+    fric_train = data["friction_coefficient"].to_numpy().reshape(-1, 250, 1)  # shape (1000, 250)
+
+    invar = {
+        "velocity": velocity
+    }
+    outvar = {
+        "friction_coefficient": fric_train
+    }
+
+    train_dataset = DictGridDataset(invar=invar, outvar=outvar)
+
+    input_keys = [Key("velocity")]
+    output_keys = [Key("friction_coefficient")]
+
     # [init-model]
     # make list of nodes to unroll graph on
-    trunk_net = FourierNetArch(
-        input_keys=[Key("t")],
-        output_keys=[Key("trunk", 128)],
+    decoder_net = instantiate_arch(
+        cfg=cfg.arch.decoder,
+        output_keys=output_keys,
     )
-
-    branch_net = FullyConnectedArch(
-        input_keys=branch_net_input_keys,
-        output_keys=[Key("branch", 128)],
+    fno = instantiate_arch(
+        cfg=cfg.arch.fno,
+        input_keys=input_keys,
+        decoder_net=decoder_net,
     )
-
-    deeponet = DeepONetArch(
-        output_keys=[Key("friction_coefficient")],
-        branch_net=branch_net,
-        trunk_net=trunk_net,
-    )
-
-    nodes = [deeponet.make_node("deepo")]
+    nodes = [fno.make_node("fno")]
     # [init-model]
 
     # [constraint1]
     # make domain
+    # make domain
     domain = Domain()
 
-    invar = {"t": t_train}
-    for i in range(cols):
-        invar[data.columns[i]] = data[data.columns[i]].to_numpy().reshape(-1,1)
-
-    # [constraint1]
-    interior = DeepONetConstraint.from_numpy(
+    # add constraints to domain
+    supervised = SupervisedGridConstraint(
         nodes=nodes,
-        invar= invar,
-        outvar={"friction_coefficient": fric_train.reshape(-1,1)},
-        batch_size=cfg.batch_size.train,
+        dataset=train_dataset,
+        batch_size=cfg.batch_size.grid,
     )
-    domain.add_constraint(interior, "Residual")
+    domain.add_constraint(supervised, "supervised")
 
-    invar_numpy = {"t": t_train[:25*250]}
-    for i in range(cols):
-        invar_numpy[data.columns[i]] = data[data.columns[i]].to_numpy().reshape(-1,1)[:25*250]
-
-    validator = PointwiseValidator(nodes=nodes,
-                                    invar=invar_numpy,
-                                    true_outvar={"friction_coefficient": fric_train[:25*250]},
-                                    plotter=CustomValidatorPlotter())
-
-    domain.add_validator(validator, 'inferencer')
+    # add validator
+    val = GridValidator(
+        nodes,
+        dataset=train_dataset,
+        batch_size=cfg.batch_size.validation,
+        plotter=GridValidatorPlotter(n_examples=5),
+    )
+    domain.add_validator(val, "test")
 
     # make solver
     slv = Solver(cfg, domain)

@@ -1,0 +1,4 @@
+VENV/
+*.out
+*.pth
+__pycache__/

@@ -46,3 +46,11 @@ Save the file and run:
 pip install --upgrade pip
 pip install --no-build-isolation .
 ```
+
+
+# Instructions for running on Kuma
+
+First, you need to get onto a processing node
+```console
+Sinteract -a lsms-ddcf -p h100 -g gpu:1 -n 1 -t 00:10:00 -m 10G -q debug -c 1
+```

@@ -5,3 +5,4 @@ VENV2/
 __pycache__/
 physicsnemo-sym/
 *.csv
+*.0

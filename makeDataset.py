@@ -24,13 +24,39 @@ def createDataset():
 
     assert df_friccoef.shape[1] == num_timestamps, "Velocity and friction data must have the same number of timestamps"
 
+    # --- Apply normalization and transformation here ---
+
+    # Convert friction coefficient dataframe to numpy array for processing
+    fric_coef_np = df_friccoef.to_numpy()
+
+    # Normalize friction coefficient to [0,1]
+    max_fric = fric_coef_np.max()
+    min_fric = fric_coef_np.min()
+    fric_coef_norm = (fric_coef_np - min_fric) / (max_fric - min_fric)
+
+    # Convert velocity dataframe to numpy array for processing
+    velocity_np = df_velocity.to_numpy()
+
+    # Apply the double-log transform to velocity, careful with zeros or negatives!
+    # Add a small epsilon to avoid division by zero or log of zero
+
+    velocity_log = np.log(np.log(1 / velocity_np))
+
+    # Normalize velocity_log to [0,1]
+    min_vel = velocity_log.min()
+    max_vel = velocity_log.max()
+    velocity_norm = (velocity_log - min_vel) / (max_vel - min_vel)
+
+    # --- End normalization ---
+
     all_rows = []
 
     for i in range(len(df_velocity)):
-        vel_row = df_velocity.iloc[i].values  # shape: (num_timestamps,)
-        fric_row = df_friccoef.iloc[i].values  # shape: (num_timestamps,)
-        
+        vel_row = velocity_norm[i]  # normalized velocity row (num_timestamps,)
+        fric_row = fric_coef_norm[i]  # normalized friction coefficient row (num_timestamps,)
+
         for j in range(num_timestamps):
+            # Compose each row with all velocity components, timestamp, and friction coefficient at that timestamp
             row = list(vel_row) + [time[j], fric_row[j]]
             all_rows.append(row)
 

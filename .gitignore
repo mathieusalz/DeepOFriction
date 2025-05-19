@@ -7,3 +7,5 @@ physicsnemo-sym/
 *.csv
 *.0
 *.npz
+*.png
+outputs/

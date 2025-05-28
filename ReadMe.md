@@ -4,6 +4,7 @@
 module load gcc
 module load openmpi/5.0.3-cuda
 module load cuda
+module load cudnn/8.9.7.29-12
 module load python
 module load py-torch
 module load py-torchvision
@@ -18,8 +19,6 @@ module list
 python -m venv VENV2
 
 source VENV2/bin/activate
-
-#python -m pip install nvidia-physicsnemo
 
 [ ! -d physicsnemo-sym ] && GIT_CLONE_PROTECTION_ACTIVE=false git clone git@github.com:NVIDIA/physicsnemo-sym.git
 cd physicsnemo-sym
@@ -52,5 +51,5 @@ pip install --no-build-isolation .
 
 First, you need to get onto a processing node
 ```bash
-Sinteract -a lsms-ddcf -p h100 -g gpu:1 -n 1 -t 00:30:00 -m 10G -q debug -c 1
+Sinteract -a lsms-ddcf -p h100 -g gpu:1 -n 1 -t 00:40:00 -m 10G -q debug -c 1
 ```

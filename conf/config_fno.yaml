@@ -25,12 +25,13 @@ defaults :
 
 arch:
   decoder:
-    output_keys: friction_coefficient
+    input_keys: [z, 32]
+    output_keys: [friction_coefficient, 250]
     nr_layers: 1
     layer_size: 32
 
   fno:
-    input_keys: velocity
+    input_keys: [velocity, 250]
     dimension: 1
     nr_fno_layers: 4
     fno_modes: 12

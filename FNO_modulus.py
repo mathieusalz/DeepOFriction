@@ -48,15 +48,15 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # [datasets]
     # load training data
-    file_path = "/home/salz/DeepONet/synthetic_data_generation/combined_dataset.csv"
-
-    data = pd.read_csv(file_path)
-    cols = len(data.columns) - 2
-
     input_keys = [Key('velocity')]
+    vel_path = "/home/salz/DeepONet/synthetic_data_generation/features.csv"
+    vel_data = pd.read_csv(vel_path, header=None)
+    velocity = vel_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
 
-    velocity = data.to_numpy()[:, :cols].reshape(-1, 250, 1)  # shape (1000, 250)
-    fric_train = data["friction_coefficient"].to_numpy().reshape(-1, 250, 1)  # shape (1000, 250)
+    output_keys = [Key('friction_coefficient')]
+    fric_path = "/home/salz/DeepONet/synthetic_data_generation/targets_AgingLaw.csv"
+    fric_data = pd.read_csv(fric_path, header = None)
+    fric_train = fric_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
 
     invar = {
         "velocity": velocity
@@ -67,8 +67,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     train_dataset = DictGridDataset(invar=invar, outvar=outvar)
 
-    input_keys = [Key("velocity")]
-    output_keys = [Key("friction_coefficient")]
 
     # [init-model]
     # make list of nodes to unroll graph on

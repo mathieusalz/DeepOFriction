@@ -37,7 +37,7 @@ from physicsnemo.sym.key import Key
 
 import pandas as pd
 
-from CVP_plotter import CustomValidatorPlotter
+from FNO_plotter import CustomValidatorPlotter
 from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.domain.validator import PointwiseValidator
 from physicsnemo.sym.utils.io.plotter import GridValidatorPlotter
@@ -49,12 +49,12 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # [datasets]
     # load training data
     input_keys = [Key('velocity')]
-    vel_path = "/home/salz/DeepONet/synthetic_data_generation/features.csv"
+    vel_path = "/home/salz/DeepONet/synthetic_data_generation/normalized_velocity.csv"
     vel_data = pd.read_csv(vel_path, header=None)
     velocity = vel_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
 
     output_keys = [Key('friction_coefficient')]
-    fric_path = "/home/salz/DeepONet/synthetic_data_generation/targets_AgingLaw.csv"
+    fric_path = "/home/salz/DeepONet/synthetic_data_generation/normalized_fric_coef.csv"
     fric_data = pd.read_csv(fric_path, header = None)
     fric_train = fric_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
 
@@ -96,13 +96,22 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     domain.add_constraint(supervised, "supervised")
 
     # add validator
-    val = GridValidator(
-        nodes,
-        dataset=train_dataset,
-        batch_size=cfg.batch_size.validation,
-        plotter=GridValidatorPlotter(n_examples=5),
-    )
-    domain.add_validator(val, "test")
+    # val = GridValidator(
+    #     nodes,
+    #     dataset=train_dataset,
+    #     batch_size=cfg.batch_size.validation,
+    #     plotter=GridValidatorPlotter(n_examples=5),
+    # )
+    # domain.add_validator(val, "test")
+
+    invar_numpy = {"velocity": velocity[:25]}
+
+    validator = PointwiseValidator(nodes=nodes,
+                                    invar=invar_numpy,
+                                    true_outvar={"friction_coefficient": fric_train[:25]},
+                                    plotter=CustomValidatorPlotter())
+    
+    domain.add_validator(validator, 'inferencer')
 
     # make solver
     slv = Solver(cfg, domain)

@@ -36,7 +36,7 @@ from physicsnemo.sym.key import Key
 
 import pandas as pd
 
-from CVP_plotter import CustomValidatorPlotter
+from DEEPO_plotter import CustomValidatorPlotter
 from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.domain.validator import PointwiseValidator
 

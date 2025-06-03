@@ -52,21 +52,33 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     vel_path = "/home/salz/DeepONet/synthetic_data_generation/normalized_velocity.csv"
     vel_data = pd.read_csv(vel_path, header=None)
     velocity = vel_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
+    vel_train = velocity[:750]
+    vel_test = velocity[750:]
 
     output_keys = [Key('friction_coefficient')]
     fric_path = "/home/salz/DeepONet/synthetic_data_generation/normalized_fric_coef.csv"
     fric_data = pd.read_csv(fric_path, header = None)
-    fric_train = fric_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
+    fric = fric_data.to_numpy().reshape(-1, 1, 250)  # shape (1000, 1, 250)
+    fric_train = fric[:750]
+    fric_test = fric[750:]
 
-    invar = {
-        "velocity": velocity
+    invar_train = {
+        "velocity": vel_train
     }
-    outvar = {
+    outvar_train = {
         "friction_coefficient": fric_train
     }
 
-    train_dataset = DictGridDataset(invar=invar, outvar=outvar)
+    invar_test = {
+        "velocity": vel_test
+    }
 
+    outvar_test = {
+        "friction_coefficient": fric_test
+    }
+
+    train_dataset = DictGridDataset(invar=invar_train, outvar=outvar_train)
+    test_dataset = DictGridDataset(invar=invar_test, outvar=outvar_test)
 
     # [init-model]
     # make list of nodes to unroll graph on
@@ -96,19 +108,18 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     domain.add_constraint(supervised, "supervised")
 
     # add validator
-    # val = GridValidator(
-    #     nodes,
-    #     dataset=train_dataset,
-    #     batch_size=cfg.batch_size.validation,
-    #     plotter=GridValidatorPlotter(n_examples=5),
-    # )
-    # domain.add_validator(val, "test")
+    val = GridValidator(
+        nodes,
+        dataset=test_dataset,
+        batch_size=cfg.batch_size.validation,
+    )
+    domain.add_validator(val, "test")
 
-    invar_numpy = {"velocity": velocity[:25]}
+    invar_numpy = {"velocity": vel_test[:100]}
 
     validator = PointwiseValidator(nodes=nodes,
                                     invar=invar_numpy,
-                                    true_outvar={"friction_coefficient": fric_train[:25]},
+                                    true_outvar={"friction_coefficient": fric_test[:100]},
                                     plotter=CustomValidatorPlotter())
     
     domain.add_validator(validator, 'inferencer')

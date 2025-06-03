@@ -8,13 +8,13 @@ class CustomValidatorPlotter(ValidatorPlotter):
         "Custom plotting function for validator"
 
         t = np.linspace(0,1,250)
-        n_curves = 25
+        n_curves = 100
         velocities = np.squeeze(invar["velocity"], axis = 1)
 
         fric_true = np.squeeze(true_outvar["friction_coefficient"],axis=1)
         fric_pred = np.squeeze(pred_outvar["friction_coefficient"],axis=1)
 
-        fig, axes = plt.subplots(5, 5, figsize=(18, 15), dpi=100)
+        fig, axes = plt.subplots(10, 10, figsize=(40, 38), dpi=100)
         axes = axes.flatten()
 
         # For shared legend
